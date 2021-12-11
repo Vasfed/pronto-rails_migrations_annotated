@@ -5,4 +5,19 @@ require "bundler/setup"
 require "pronto/rails_migrations_annotated"
 
 require "irb"
+
+def repo_folder
+  'spec/fixtures/somerepo'
+end
+
+def repo
+  Pronto::Git::Repository.new(repo_folder).tap do |pronto_repo|
+    raise "Proto::Repo already responds to :rugged" if pronto_repo.respond_to?(:rugged)
+
+    def pronto_repo.rugged
+      @repo
+    end
+  end
+end
+
 IRB.start(__FILE__)

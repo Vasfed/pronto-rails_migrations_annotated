@@ -4,7 +4,7 @@ require_relative "lib/pronto/rails_migrations_annotated/version"
 
 Gem::Specification.new do |spec|
   spec.name = "pronto-rails_migrations_annotated"
-  spec.version = Pronto::RailsMigrationsAnnotated::VERSION
+  spec.version = Pronto::RailsMigrationsAnnotatedVersion::VERSION
   spec.authors = ["Vasily Fedoseyev"]
   spec.email = ["vasilyfedoseyev@gmail.com"]
 
