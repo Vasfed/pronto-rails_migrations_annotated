@@ -12,6 +12,7 @@ module Pronto
 
       check_migrations_mixed_with_code
       check_migration_version_numbers
+      check_large_schema_diff
 
       @messages
     end
@@ -37,6 +38,23 @@ module Pronto
           nil,
           self.class
         )
+      end
+    end
+
+    def diff_threshold
+      # TODO: some config for this?
+      200
+    end
+
+    def check_large_schema_diff
+      return unless diff_threshold
+
+      if schema_patches.sum(&:additions) >= diff_threshold || schema_patches.sum(&:deletions) >= diff_threshold
+        add_message_at_patch(schema_patches.first, "Large schema diff, pay attention")
+      end
+
+      if structure_patches.sum(&:additions) >= diff_threshold || structure_patches.sum(&:deletions) >= diff_threshold
+        add_message_at_patch(structure_patches.first, "Large structure diff, pay attention")
       end
     end
 
