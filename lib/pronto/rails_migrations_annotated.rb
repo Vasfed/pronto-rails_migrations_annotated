@@ -113,8 +113,9 @@ module Pronto
             )
         end
 
-        unless structure_file_lines.last(2) == ["\n", "\n"] && structure_file_lines[-3] != "\n" ||
-          structure_file_lines.last.match?(/\A\s*[^\s]\s*\n/)
+        if structure_patches.any? &&
+          !(structure_file_lines.last(2) == ["\n", "\n"] && structure_file_lines[-3] != "\n") &&
+          !structure_file_lines.last.match?(/\A\s*[^\s]+\s*\n/)
           add_message_at_patch(structure_patches.last,
             "structure.sql must end with a newline or 2 empty lines", line: :last)
         end
