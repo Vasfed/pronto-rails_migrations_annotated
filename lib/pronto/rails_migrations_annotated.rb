@@ -70,7 +70,7 @@ module Pronto
       version_numbers = migration_patches.map { |patch| patch.delta.new_file[:path].sub(/^[^0-9]*([0-9]+).+/, '\1') }
 
       schema_file_name = 'db/schema.rb'
-      if File.exist?(schema_file_name)
+      if File.exist?(schema_file_name) && !gitignored?(schema_file_name)
         if schema_patches.none?
           add_message_at_patch(migration_patches, "Migration file detected, but no changes in schema.rb", :error)
         else
@@ -91,7 +91,7 @@ module Pronto
       end
 
       structure_file_name = 'db/structure.sql'
-      if File.exist?(structure_file_name)
+      if File.exist?(structure_file_name) && !gitignored?(structure_file_name)
         migration_line_regex = /\A\s*\('(?<version>[0-9]{14})'\)/
         structure_file_lines = File.readlines(structure_file_name)
         versions_from_schema = structure_file_lines.select{|line| line =~ migration_line_regex }
@@ -140,6 +140,13 @@ module Pronto
         end
       end
 
+    end
+
+    def gitignored?(path)
+      # TODO: get this from rugged (but it's not exposed to plugins) or make more compatible
+      `git check-ignore #{path}` != ""
+    rescue Errno::ENOENT # when git not present
+      nil
     end
 
     def migration_patches
