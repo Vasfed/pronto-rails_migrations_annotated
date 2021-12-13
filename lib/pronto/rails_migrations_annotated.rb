@@ -73,40 +73,41 @@ module Pronto
       if File.exist?(schema_file_name)
         if schema_patches.none?
           add_message_at_patch(migration_patches, "Migration file detected, but no changes in schema.rb", :error)
-        end
-
-        match = File.read(schema_file_name).match(%r{ActiveRecord::Schema.define\(version:\s*(?<version>[0-9_]+)\s*\)})
-        if match
-          schema_migration_version = match[:version]
-          schema_migration_version_clean = schema_migration_version.gsub(/[^0-9]/, '')
-          version_numbers.select { |version| version > schema_migration_version_clean }.each do |wrong_version|
-            add_message_at_patch(
-              migration_patches.first { |patch| patch.delta.new_file[:path].include?(wrong_version) },
-              "Migration version #{wrong_version} is above schema.rb version #{schema_migration_version}"
-            )
-          end
         else
-          add_message_at_patch(migration_patches.first, "Cannot detect schema migration version", :warning)
+          match = File.read(schema_file_name).match(%r{ActiveRecord::Schema.define\(version:\s*(?<version>[0-9_]+)\s*\)})
+          if match
+            schema_migration_version = match[:version]
+            schema_migration_version_clean = schema_migration_version.gsub(/[^0-9]/, '')
+            version_numbers.select { |version| version > schema_migration_version_clean }.each do |wrong_version|
+              add_message_at_patch(
+                migration_patches.first { |patch| patch.delta.new_file[:path].include?(wrong_version) },
+                "Migration version #{wrong_version} is above schema.rb version #{schema_migration_version}"
+              )
+            end
+          else
+            add_message_at_patch(migration_patches.first, "Cannot detect schema migration version", :warning)
+          end
         end
       end
 
       structure_file_name = 'db/structure.sql'
       if File.exist?(structure_file_name)
-        if structure_patches.none?
-          add_message_at_patch(migration_patches, "Migration file detected, but no changes in structure.sql", :error)
-        end
-
         migration_line_regex = /\A\s*\('(?<version>[0-9]{14})'\)/
         structure_file_lines = File.readlines(structure_file_name)
         versions_from_schema = structure_file_lines.select{|line| line =~ migration_line_regex }
 
-
+        missing_from_structure = false
         version_numbers.select { |version| versions_from_schema.none? { |strct_ver| strct_ver.include?(version) } }
           .each do |wrong_version|
+          missing_from_structure = true
           add_message_at_patch(
             migration_patches.first { |patch| patch.delta.new_file[:path].include?(wrong_version) },
-            "Migration #{wrong_version} is missing from structure.sql"
+            "Migration #{wrong_version} is missing from structure.sql", :error
           )
+        end
+
+        if structure_patches.none? && !missing_from_structure
+          add_message_at_patch(migration_patches, "Migration file detected, but no changes in structure.sql")
         end
 
         structure_patches.each do |patch|
