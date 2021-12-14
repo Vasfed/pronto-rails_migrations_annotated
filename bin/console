@@ -7,7 +7,7 @@ require "pronto/rails_migrations_annotated"
 require "irb"
 
 def repo_folder
-  'spec/fixtures/somerepo'
+  "spec/fixtures/somerepo"
 end
 
 def repo
