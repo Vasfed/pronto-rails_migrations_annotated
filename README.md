@@ -1,4 +1,5 @@
 # Pronto::RailsMigrationsAnnotated
+[![Gem Version](https://badge.fury.io/rb/pronto-rails_migrations_annotated.svg)](https://badge.fury.io/rb/pronto-rails_migrations_annotated)
 
 Pronto runner to enforce migrations to be in separate PRs, but allow schema annotations.
 Also check for obvious things like adding migration number that is not present in PR to structure.sql.
@@ -8,16 +9,12 @@ Also check for obvious things like adding migration number that is not present i
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'pronto-rails_migrations_annotated'
+gem 'pronto-rails_migrations_annotated', require: false
 ```
 
 And then execute:
 
     $ bundle install
-
-Or install it yourself as:
-
-    $ gem install pronto-rails_migrations_annotated
 
 ## Usage
 
