@@ -132,7 +132,7 @@ module Pronto
         patch.added_lines.select { |line| line.content.match?(migration_line_regex) }.each do |line|
           version = line.content.match(migration_line_regex)[:version]
           next if migration_version_numbers.include?(version)
-          next if line.content.end_with?(",") &&
+          next if line.content.end_with?(",\n") &&
                   patch.deleted_lines.any? { |del| del.content.include?("#{version}');") }
 
           add_message_at_patch(patch, "Migration #{version} is not present in this changeset", :error, line: line)
