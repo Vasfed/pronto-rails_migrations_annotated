@@ -16,9 +16,10 @@ RSpec.describe Pronto::RailsMigrationsAnnotated do
     end
   end
   let(:test_branch) { "master" }
+  let(:base_branch) { "master" }
   let(:patches) do
     repo.rugged.checkout(test_branch)
-    repo.diff("master")
+    repo.diff(base_branch)
   end
   let(:trigger) { include(/Do not mix migrations/) }
 
@@ -45,6 +46,26 @@ RSpec.describe Pronto::RailsMigrationsAnnotated do
     let(:test_branch) { "no_migrations" }
 
     it { expect(warning_messages).not_to trigger }
+
+    context "and changes to structure.sql" do
+      let(:test_branch) { "structure_without_migrations" }
+      let(:base_branch) { "create_structure_sql" }
+
+      it { expect(warning_messages).to include(/changed without migrations/) }
+
+      context "when added migration missing" do
+        let(:test_branch) { "structure_without_migration" }
+
+        it { expect(warning_messages).to include(/Migration 20220919220000 is not present in this changeset/) }
+      end
+
+      context "when initial structure commit" do
+        let(:test_branch) { "create_structure_sql" }
+        let(:base_branch) { "master" }
+
+        it { expect(warning_messages).to be_empty }
+      end
+    end
   end
 
   context "when migrations present" do
@@ -56,7 +77,6 @@ RSpec.describe Pronto::RailsMigrationsAnnotated do
       let(:test_branch) { "schema_changes_missing_version_structure" }
 
       it { expect(warning_messages).to include(/Migration 20211210200001 is missing from structure.sql/) }
-      it { expect(warning_messages).to include(/Migration 20211210200000 is not present in this changeset/) }
     end
 
     context "when comments in some files" do

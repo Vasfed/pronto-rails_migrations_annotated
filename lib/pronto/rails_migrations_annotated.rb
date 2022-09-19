@@ -97,7 +97,7 @@ module Pronto
     end
 
     def check_structure_migration_version_numbers
-      return unless migration_patches.any?
+      # return unless migration_patches.any?
 
       structure_file_name = "db/structure.sql"
       return if !File.exist?(structure_file_name) || gitignored?(structure_file_name)
@@ -108,7 +108,7 @@ module Pronto
       check_structure_versions_present(versions_from_schema)
       check_structure_migration_missing
 
-      check_structure_versions_syntax(versions_from_schema)
+      check_structure_versions_syntax(versions_from_schema) if versions_from_schema.any?
       check_structure_versions_sorted(versions_from_schema)
       check_structure_ending(structure_file_lines)
     end
@@ -129,13 +129,21 @@ module Pronto
 
     def check_structure_migration_missing
       structure_patches.each do |patch|
+        next if patch.delta.old_file[:oid] == "0000000000000000000000000000000000000000" # new structure.sql file
+
+        triggered = false
         patch.added_lines.select { |line| line.content.match?(migration_line_regex) }.each do |line|
           version = line.content.match(migration_line_regex)[:version]
           next if migration_version_numbers.include?(version)
           next if line.content.end_with?(",\n") &&
                   patch.deleted_lines.any? { |del| del.content.include?("#{version}');") }
 
+          triggered = true
           add_message_at_patch(patch, "Migration #{version} is not present in this changeset", :error, line: line)
+        end
+
+        if !triggered && migration_version_numbers.none?
+          add_message_at_patch(patch, "structure.sql changed without migrations", :error, line: patch.lines.first)
         end
       end
     end
