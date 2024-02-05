@@ -25,7 +25,9 @@ module Pronto
     private
 
     def add_message_at_patch(patches, message, level = :warning, line: :first)
-      patches = [patches] unless patches.is_a?(Array)
+      patches = [patches].compact unless patches.is_a?(Array)
+      raise "Patch not found for message (#{message.inspect})" if patches.empty?
+
       patches.each do |patch|
         target_line = case line
                       when :first then patch.added_lines.first || patch.lines.first
@@ -122,7 +124,7 @@ module Pronto
                              "Migration #{wrong_version} is missing from structure.sql", :error)
       end
 
-      return if structure_patches.any? || found_missing_migration
+      return if structure_patches.any? || found_missing_migration || migration_patches.none?
 
       add_message_at_patch(migration_patches, "Migration file detected, but no changes in structure.sql")
     end
@@ -150,8 +152,23 @@ module Pronto
 
     def check_structure_versions_sorted(versions_from_schema)
       return if versions_from_schema == versions_from_schema.sort
+      return if versions_from_schema == versions_from_schema.sort.reverse
+
+      # guess sort order by lower offending migrations count
+      offending = [
+        versions_from_schema.each_cons(2).select { |(a, b)| a > b }, # if ascending
+        versions_from_schema.each_cons(2).select { |(a, b)| a < b } # if sort is desc
+      ].min_by(&:size).flat_map { |pair| pair.map { |line| line.gsub(/[^0-9]+/, "") } }
+
+      if structure_patches.none?
+        puts "WARNING: structure.sql migrations are not sorted (not in changes, offending #{offending.join(', ')})"
+        return
+      end
+
+      offending_regex = Regexp.union(offending)
 
       add_message_at_patch(
+        structure_patches.first { |patch| patch.lines.any? { |line| line.content.match?(offending_regex) } } ||
         structure_patches.first { |patch| patch.lines.any? { |line| line.content.match?(migration_line_regex) } },
         "Migration versions must be sorted and have correct syntax"
       )

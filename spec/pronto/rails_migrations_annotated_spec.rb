@@ -3,7 +3,8 @@
 require "fileutils"
 
 RSpec.describe Pronto::RailsMigrationsAnnotated do
-  subject(:warning_messages) { described_class.new(patches, nil).run.map(&:msg) }
+  let(:target_object) { described_class.new(patches, nil) }
+  subject(:warning_messages) { target_object.run.map(&:msg) }
 
   let(:repo_folder) { File.expand_path("../fixtures/somerepo", __dir__) }
   let(:repo) do
@@ -64,6 +65,28 @@ RSpec.describe Pronto::RailsMigrationsAnnotated do
         let(:base_branch) { "master" }
 
         it { expect(warning_messages).to be_empty }
+      end
+    end
+
+    context "and no changes to structure.sql" do
+      context "and migration versions unsorted" do
+        around do |example|
+          structure_file = File.join(repo_folder, 'db/structure.sql')
+          File.write(structure_file, <<~SQL)
+            INSERT INTO "schema_migrations" (version) VALUES
+            ('00000000000001'),
+            ('00000000000003'),
+            ('00000000000002');
+          SQL
+          example.run
+        ensure
+          File.unlink(structure_file)
+        end
+
+        it do
+          expect(target_object).to receive(:puts).with(a_string_matching('offending'))
+          expect(warning_messages).to be_empty
+        end
       end
     end
   end
