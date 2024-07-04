@@ -211,8 +211,8 @@ module Pronto
     def migration_related_files
       Regexp.union(
         %r{db/migrate/.*[0-9]+_\w+.rb},
-        %r{db/schema.rb},
-        %r{db/structure.sql}
+        %r{db/.*schema.rb},
+        %r{db/.*structure.sql}
       )
     end
 
