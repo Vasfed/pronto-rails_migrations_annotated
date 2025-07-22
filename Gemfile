@@ -13,3 +13,5 @@ gem "rubocop", "~> 1.21"
 gem "rubocop-performance"
 gem "rubocop-rake"
 gem "rubocop-rspec"
+
+gem 'base64' # fix pronto dependency
