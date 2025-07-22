@@ -186,11 +186,10 @@ module Pronto
 
     def check_structure_ending(structure_file_lines)
       return if structure_patches.none?
-      return if structure_file_lines.last(2) == %W[\n \n] && structure_file_lines[-3] != "\n"
-      return if structure_file_lines.last.match?(/\A\s*[^\s]+\s*\n/)
+      return if structure_file_lines.last.end_with?("\n")
 
       add_message_at_patch(structure_patches.last,
-                           "structure.sql must end with a newline or 2 empty lines", line: :last)
+                           "structure.sql must end with newline", line: :last)
     end
 
     def gitignored?(path)
